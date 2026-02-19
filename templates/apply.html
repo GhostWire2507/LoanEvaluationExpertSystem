@@ -1,0 +1,261 @@
+{% extends "base.html" %}
+
+{% block title %}Apply for Loan - Loan Evaluation Expert System{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+    <div class="bg-white rounded-lg shadow-xl overflow-hidden">
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-blue-900 to-blue-700 py-8 text-center">
+            <i class="fas fa-file-signature text-5xl text-white"></i>
+            <h2 class="text-3xl font-bold text-white mt-2">Loan Application</h2>
+            <p class="text-blue-200 mt-2">Complete the form below for AI-powered evaluation</p>
+        </div>
+        
+        <!-- Application Form -->
+        <form method="POST" class="p-8">
+            <div class="space-y-8">
+                <!-- Loan Details -->
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">
+                        <i class="fas fa-dollar-sign mr-2"></i>Loan Details
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="loan_amount" class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="fas fa-money-bill-wave mr-2"></i>Loan Amount ($)
+                            </label>
+                            <input 
+                                type="number" 
+                                id="loan_amount" 
+                                name="loan_amount" 
+                                required
+                                min="1000"
+                                max="1000000"
+                                step="100"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                placeholder="Enter loan amount"
+                            >
+                            <p class="text-xs text-gray-500 mt-1">Min: $1,000 - Max: $1,000,000</p>
+                        </div>
+                        
+                        <div>
+                            <label for="loan_purpose" class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="fas fa-tag mr-2"></i>Loan Purpose
+                            </label>
+                            <select 
+                                id="loan_purpose" 
+                                name="loan_purpose" 
+                                required
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            >
+                                <option value="">Select purpose</option>
+                                <option value="home_improvement">Home Improvement</option>
+                                <option value="debt_consolidation">Debt Consolidation</option>
+                                <option value="business">Business</option>
+                                <option value="education">Education</option>
+                                <option value="medical">Medical</option>
+                                <option value="vacation">Vacation</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Financial Information -->
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">
+                        <i class="fas fa-chart-line mr-2"></i>Financial Information
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="annual_income" class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="fas fa-wallet mr-2"></i>Annual Income ($)
+                            </label>
+                            <input 
+                                type="number" 
+                                id="annual_income" 
+                                name="annual_income" 
+                                required
+                                min="10000"
+                                max="10000000"
+                                step="1000"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                placeholder="Enter annual income"
+                            >
+                        </div>
+                        
+                        <div>
+                            <label for="debt_amount" class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="fas fa-credit-card mr-2"></i>Annual Debt Payments ($)
+                            </label>
+                            <input 
+                                type="number" 
+                                id="debt_amount" 
+                                name="debt_amount" 
+                                required
+                                min="0"
+                                max="10000000"
+                                step="100"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                placeholder="Enter annual debt payments"
+                            >
+                            <p class="text-xs text-gray-500 mt-1">Include all debt: loans, credit cards, etc.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Credit Information -->
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">
+                        <i class="fas fa-credit-card mr-2"></i>Credit Information
+                    </h3>
+                    <div>
+                        <label for="credit_score" class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-star mr-2"></i>Credit Score
+                        </label>
+                        <input 
+                            type="range" 
+                            id="credit_score" 
+                            name="credit_score" 
+                            required
+                            min="300"
+                            max="850"
+                            value="650"
+                            class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                            oninput="updateCreditScore(this.value)"
+                        >
+                        <div class="flex justify-between text-xs text-gray-500 mt-2">
+                            <span>300 (Poor)</span>
+                            <span id="credit_score_display" class="text-lg font-bold text-blue-600">650</span>
+                            <span>850 (Excellent)</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Employment Information -->
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">
+                        <i class="fas fa-briefcase mr-2"></i>Employment Information
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="employment_type" class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="fas fa-user-tie mr-2"></i>Employment Type
+                            </label>
+                            <select 
+                                id="employment_type" 
+                                name="employment_type" 
+                                required
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            >
+                                <option value="full_time">Full Time</option>
+                                <option value="part_time">Part Time</option>
+                                <option value="self_employed">Self Employed</option>
+                                <option value="contract">Contract</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label for="employment_years" class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="fas fa-calendar mr-2"></i>Years of Employment
+                            </label>
+                            <input 
+                                type="number" 
+                                id="employment_years" 
+                                name="employment_years" 
+                                required
+                                min="0"
+                                max="50"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                placeholder="Enter years of employment"
+                            >
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Submit Button -->
+                <div class="pt-4">
+                    <button 
+                        type="submit" 
+                        class="w-full bg-gradient-to-r from-blue-900 to-blue-700 text-white py-4 rounded-lg hover:from-blue-800 hover:to-blue-600 transition-all font-bold text-lg"
+                    >
+                        <i class="fas fa-robot mr-2"></i>Evaluate My Application
+                    </button>
+                    <p class="text-center text-sm text-gray-500 mt-3">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Our AI expert system will evaluate your application instantly
+                    </p>
+                </div>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Info Box -->
+    <div class="mt-6 bg-gray-50 border border-gray-200 rounded-lg p-4">
+        <h3 class="font-semibold text-gray-800 mb-2">
+            <i class="fas fa-shield-alt mr-2"></i>Evaluation Criteria
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600">
+            <div class="flex items-center">
+                <i class="fas fa-check text-green-500 mr-2"></i>
+                Credit Score (300-850)
+            </div>
+            <div class="flex items-center">
+                <i class="fas fa-check text-green-500 mr-2"></i>
+                Debt-to-Income Ratio
+            </div>
+            <div class="flex items-center">
+                <i class="fas fa-check text-green-500 mr-2"></i>
+                Employment Stability
+            </div>
+            <div class="flex items-center">
+                <i class="fas fa-check text-green-500 mr-2"></i>
+                Loan to Income Ratio
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_styles %}
+<style>
+    input[type="range"] {
+        -webkit-appearance: none;
+        appearance: none;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: #2563eb;
+        cursor: pointer;
+    }
+    input[type="range"]::-moz-range-thumb {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: #2563eb;
+        cursor: pointer;
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function updateCreditScore(value) {
+        document.getElementById('credit_score_display').textContent = value;
+        
+        // Update color based on score
+        const display = document.getElementById('credit_score_display');
+        if (value >= 750) {
+            display.className = 'text-lg font-bold text-green-600';
+        } else if (value >= 650) {
+            display.className = 'text-lg font-bold text-yellow-600';
+        } else {
+            display.className = 'text-lg font-bold text-red-600';
+        }
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+
+{% block title %}Application Details - Admin - Loan Evaluation Expert System{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto space-y-6">
+    <!-- Back Button -->
+    <a href="{{ url_for('admin_dashboard') }}" class="inline-flex items-center text-blue-600 hover:text-blue-800">
+        <i class="fas fa-arrow-left mr-2"></i>Back to Admin Dashboard
+    </a>
+    
+    <!-- Application Header -->
+    <div class="bg-white rounded-lg shadow-md overflow-hidden">
+        <div class="bg-gradient-to-r from-purple-900 to-purple-700 py-6 px-8">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-2xl font-bold text-white">
+                        <i class="fas fa-file-alt mr-2"></i>Loan Application #{{ application.id }}
+                    </h1>
+                    <p class="text-purple-200 mt-1">
+                        Submitted by {{ application.user.username }} on {{ application.created_at.strftime('%Y-%m-%d %H:%M') if application.created_at else 'N/A' }}
+                    </p>
+                </div>
+                {% if application.evaluation_result == 'approved' %}
+                    <div class="bg-green-500 text-white px-6 py-3 rounded-lg">
+                        <i class="fas fa-check-circle text-2xl"></i>
+                    </div>
+                {% elif application.evaluation_result == 'conditional' %}
+                    <div class="bg-yellow-500 text-white px-6 py-3 rounded-lg">
+                        <i class="fas fa-exclamation-circle text-2xl"></i>
+                    </div>
+                {% else %}
+                    <div class="bg-red-500 text-white px-6 py-3 rounded-lg">
+                        <i class="fas fa-times-circle text-2xl"></i>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Result Banner -->
+        <div class="px-8 py-6 {% if application.evaluation_result == 'approved' %}bg-green-50{% elif application.evaluation_result == 'conditional' %}bg-yellow-50{% else %}bg-red-50{% endif %}">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-xl font-bold {% if application.evaluation_result == 'approved' %}text-green-800{% elif application.evaluation_result == 'conditional' %}text-yellow-800{% else %}text-red-800{% endif %}">
+                        <i class="fas {% if application.evaluation_result == 'approved' %}fa-check{% elif application.evaluation_result == 'conditional' %}fa-exclamation{% else %}fa-times{% endif %} mr-2"></i>
+                        {{ application.evaluation_result|upper }} 
+                        <span class="text-lg font-normal">({{ "%.0f"|format(application.evaluation_confidence) }}% confidence)</span>
+                    </h2>
+                    <p class="mt-2 text-gray-700">{{ application.evaluation_explanation }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- User Information -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">
+            <i class="fas fa-user mr-2"></i>Applicant Information
+        </h3>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div>
+                <p class="text-sm text-gray-500">Username</p>
+                <p class="font-semibold text-gray-800">{{ application.user.username }}</p>
+            </div>
+            <div>
+                <p class="text-sm text-gray-500">Email</p>
+                <p class="font-semibold text-gray-800">{{ application.user.email }}</p>
+            </div>
+            <div>
+                <p class="text-sm text-gray-500">User Role</p>
+                {% if application.user.is_admin %}
+                    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">
+                        <i class="fas fa-crown mr-1"></i>Admin
+                    </span>
+                {% else %}
+                    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
+                        <i class="fas fa-user mr-1"></i>User
+                    </span>
+                {% endif %}
+            </div>
+            <div>
+                <p class="text-sm text-gray-500">Member Since</p>
+                <p class="font-semibold text-gray-800">{{ application.user.created_at.strftime('%Y-%m-%d') if application.user.created_at else 'N/A' }}</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Application Details Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Loan Information -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">
+                <i class="fas fa-dollar-sign mr-2"></i>Loan Information
+            </h3>
+            <div class="space-y-4">
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Loan Amount:</span>
+                    <span class="font-semibold text-gray-800">${{ "%.2f"|format(application.loan_amount) }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Loan Purpose:</span>
+                    <span class="font-semibold text-gray-800">{{ application.loan_purpose|title }}</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Financial Information -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">
+                <i class="fas fa-chart-line mr-2"></i>Financial Information
+            </h3>
+            <div class="space-y-4">
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Annual Income:</span>
+                    <span class="font-semibold text-gray-800">${{ "%.2f"|format(application.annual_income) }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Annual Debt:</span>
+                    <span class="font-semibold text-gray-800">${{ "%.2f"|format(application.debt_amount) }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-600">DTI Ratio:</span>
+                    <span class="font-semibold {% if application.dti_ratio < 30 %}text-green-600{% elif application.dti_ratio < 43 %}text-yellow-600{% else %}text-red-600{% endif %}">
+                        {{ "%.1f"|format(application.dti_ratio) }}%
+                    </span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Credit Information -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">
+                <i class="fas fa-credit-card mr-2"></i>Credit Information
+            </h3>
+            <div class="space-y-4">
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-600">Credit Score:</span>
+                    <span class="font-bold text-2xl {% if application.credit_score >= 750 %}text-green-600{% elif application.credit_score >= 650 %}text-yellow-600{% else %}text-red-600{% endif %}">
+                        {{ application.credit_score }}
+                    </span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Credit Category:</span>
+                    <span class="font-semibold text-gray-800">{{ details.credit_category|title }}</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Employment Information -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">
+                <i class="fas fa-briefcase mr-2"></i>Employment Information
+            </h3>
+            <div class="space-y-4">
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Employment Type:</span>
+                    <span class="font-semibold text-gray-800">{{ application.employment_type|replace('_', ' ')|title }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Years of Employment:</span>
+                    <span class="font-semibold text-gray-800">{{ application.employment_years }} years</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Employment Stability:</span>
+                    <span class="font-semibold text-gray-800">{{ details.employment_stability|title }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- AI Evaluation Details -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">
+            <i class="fas fa-robot mr-2"></i>AI Evaluation Analysis
+        </h3>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="bg-gray-50 rounded-lg p-4 text-center">
+                <p class="text-sm text-gray-500">Credit Category</p>
+                <p class="text-lg font-bold text-gray-800">{{ details.credit_category|title }}</p>
+            </div>
+            <div class="bg-gray-50 rounded-lg p-4 text-center">
+                <p class="text-sm text-gray-500">DTI Category</p>
+                <p class="text-lg font-bold text-gray-800">{{ details.dti_category|title }}</p>
+            </div>
+            <div class="bg-gray-50 rounded-lg p-4 text-center">
+                <p class="text-sm text-gray-500">Loan-to-Income</p>
+                <p class="text-lg font-bold text-gray-800">{{ details.loan_to_income_ratio }}%</p>
+            </div>
+            <div class="bg-gray-50 rounded-lg p-4 text-center">
+                <p class="text-sm text-gray-500">Employment</p>
+                <p class="text-lg font-bold text-gray-800">{{ details.employment_stability|title }}</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Actions -->
+    <div class="flex justify-between">
+        <a href="{{ url_for('admin_dashboard') }}" class="bg-gray-500 text-white px-6 py-3 rounded-lg hover:bg-gray-600 transition-colors">
+            <i class="fas fa-arrow-left mr-2"></i>Back to Dashboard
+        </a>
+        <a href="{{ url_for('admin_analytics') }}" class="bg-green-700 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition-colors">
+            <i class="fas fa-chart-line mr-2"></i>View Analytics
+        </a>
+    </div>
+</div>
+{% endblock %}
