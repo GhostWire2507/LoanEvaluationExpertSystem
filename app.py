@@ -4,7 +4,6 @@ Loan Evaluation Expert System - Main Flask Application
 import os
 from functools import wraps
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
-from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 
 from config import Config
@@ -32,6 +31,16 @@ def init_prolog():
 # Initialize Prolog on startup
 with app.app_context():
     init_prolog()
+
+
+def build_result_stats(applications):
+    """Compute summary counts for loan decisions."""
+    return {
+        'total': len(applications),
+        'approved': sum(1 for a in applications if a.evaluation_result == 'approved'),
+        'conditional': sum(1 for a in applications if a.evaluation_result == 'conditional'),
+        'rejected': sum(1 for a in applications if a.evaluation_result == 'rejected')
+    }
 
 
 # =====================================================================
@@ -178,18 +187,7 @@ def dashboard():
     user = User.query.get(session['user_id'])
     applications = LoanApplication.query.filter_by(user_id=user.id).order_by(LoanApplication.created_at.desc()).all()
     
-    # Calculate statistics
-    total_applications = len(applications)
-    approved = sum(1 for a in applications if a.evaluation_result == 'approved')
-    conditional = sum(1 for a in applications if a.evaluation_result == 'conditional')
-    rejected = sum(1 for a in applications if a.evaluation_result == 'rejected')
-    
-    stats = {
-        'total': total_applications,
-        'approved': approved,
-        'conditional': conditional,
-        'rejected': rejected
-    }
+    stats = build_result_stats(applications)
     
     return render_template('dashboard.html', 
                          applications=applications, 
@@ -327,11 +325,7 @@ def admin_dashboard():
     # Get all applications with user info
     applications = LoanApplication.query.join(User).order_by(LoanApplication.created_at.desc()).all()
     
-    # Calculate statistics
-    total_applications = len(applications)
-    approved = sum(1 for a in applications if a.evaluation_result == 'approved')
-    conditional = sum(1 for a in applications if a.evaluation_result == 'conditional')
-    rejected = sum(1 for a in applications if a.evaluation_result == 'rejected')
+    stats = build_result_stats(applications)
     
     # Calculate average confidence
     confidence_values = [a.evaluation_confidence for a in applications if a.evaluation_confidence]
@@ -340,13 +334,7 @@ def admin_dashboard():
     # Get recent evaluations
     recent_history = EvaluationHistory.query.order_by(EvaluationHistory.evaluated_at.desc()).limit(10).all()
     
-    stats = {
-        'total': total_applications,
-        'approved': approved,
-        'conditional': conditional,
-        'rejected': rejected,
-        'avg_confidence': round(avg_confidence, 2)
-    }
+    stats['avg_confidence'] = round(avg_confidence, 2)
     
     return render_template('admin_dashboard.html',
                          applications=applications,
@@ -442,8 +430,8 @@ def admin_analytics():
             range_key = '300-649'
         
         credit_ranges[range_key]['total'] += 1
-        if h.result == credit_ranges[range_key]['approved'] 'approved':
-            += 1
+        if h.result == 'approved':
+            credit_ranges[range_key]['approved'] += 1
         elif h.result == 'conditional':
             credit_ranges[range_key]['conditional'] += 1
         elif h.result == 'rejected':
@@ -491,14 +479,7 @@ def api_stats():
     """API endpoint for statistics"""
     applications = LoanApplication.query.all()
     
-    stats = {
-        'total': len(applications),
-        'approved': sum(1 for a in applications if a.evaluation_result == 'approved'),
-        'conditional': sum(1 for a in applications if a.evaluation_result == 'conditional'),
-        'rejected': sum(1 for a in applications if a.evaluation_result == 'rejected')
-    }
-    
-    return jsonify(stats)
+    return jsonify(build_result_stats(applications))
 
 
 # =====================================================================
