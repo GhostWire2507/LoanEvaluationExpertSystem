@@ -11,7 +11,7 @@ class PrologEngine:
     Wrapper class for SWI-Prolog to evaluate loan applications
     """
     
-    def __init__(self, prolog_executable: str = 'swipl'):
+    def __init__(self, prolog_executable: str = 'C:\\Program Files\\swipl\\bin\\swipl.exe'):
         """
         Initialize the Prolog engine
         
@@ -34,27 +34,39 @@ class PrologEngine:
             True if initialization successful, False otherwise
         """
         try:
+            # Set environment variables for SWI-Prolog
+            import os
+            os.environ['SWI_HOME'] = 'C:\\Program Files\\swipl'
+            os.environ['SWIPL'] = self.prolog_executable
+            
             # Try to import pyswip
             from pyswip import Prolog
             
             self.rules_file = rules_path
             
-            # Initialize Prolog
-            self.prolog = Prolog()
-            
-            # Load the rules file
-            self.prolog.consult(rules_path)
-            
-            self._initialized = True
-            print(f"Prolog engine initialized with rules from: {rules_path}")
-            return True
+            # Initialize Prolog with error handling
+            try:
+                self.prolog = Prolog()
+                # Load the rules file
+                self.prolog.consult(rules_path)
+                
+                self._initialized = True
+                print(f"Prolog engine initialized with rules from: {rules_path}")
+                return True
+            except Exception as prolog_error:
+                print(f"Error initializing Prolog engine: {prolog_error}")
+                print("This may be due to SWI-Prolog not being installed or incompatible version.")
+                print("Using fallback evaluation instead.")
+                self._initialized = False
+                return False
             
         except ImportError:
             print("Warning: pyswip not installed. Using fallback evaluation.")
             self._initialized = False
             return False
         except Exception as e:
-            print(f"Error initializing Prolog engine: {e}")
+            print(f"Error importing pyswip: {e}")
+            print("Using fallback evaluation instead.")
             self._initialized = False
             return False
     

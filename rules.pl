@@ -48,7 +48,18 @@ evaluate_loan(CreditScore, DTI, EmploymentYears, LoanAmount, AnnualIncome, Resul
     Explanation = 'Excellent credit score combined with low debt-to-income ratio and stable employment indicates very low risk. Loan is approved.',
     Confidence = 95.0.
 
-% Rule 2: High credit score with good DTI - APPROVED
+% Rule 2: High credit score with good DTI - CONDITIONAL if LTI is high
+evaluate_loan(CreditScore, DTI, EmploymentYears, LoanAmount, AnnualIncome, Result, Explanation, Confidence) :-
+    credit_category(CreditScore, high),
+    dti_category(DTI, good),
+    loan_to_income_ratio(LoanAmount, AnnualIncome, LTI),
+    LTI >= 30,
+    !,
+    Result = conditional,
+    Explanation = 'Good credit score but loan amount is high relative to income. Approved with conditions.',
+    Confidence = 75.0.
+
+% Rule 3: High credit score with good DTI and reasonable LTI - APPROVED
 evaluate_loan(CreditScore, DTI, EmploymentYears, LoanAmount, AnnualIncome, Result, Explanation, Confidence) :-
     credit_category(CreditScore, high),
     dti_category(DTI, good),
@@ -59,7 +70,7 @@ evaluate_loan(CreditScore, DTI, EmploymentYears, LoanAmount, AnnualIncome, Resul
     Explanation = 'Strong credit history and manageable debt levels. The loan amount is reasonable relative to income. Approved.',
     Confidence = 90.0.
 
-% Rule 3: High credit score with moderate DTI - CONDITIONAL
+% Rule 4: High credit score with moderate DTI - CONDITIONAL
 evaluate_loan(CreditScore, DTI, EmploymentYears, LoanAmount, AnnualIncome, Result, Explanation, Confidence) :-
     credit_category(CreditScore, high),
     dti_category(DTI, moderate),
@@ -68,7 +79,7 @@ evaluate_loan(CreditScore, DTI, EmploymentYears, LoanAmount, AnnualIncome, Resul
     Explanation = 'Good credit score but debt-to-income ratio is slightly elevated. Loan approved with conditions such as additional documentation or co-signer.',
     Confidence = 75.0.
 
-% Rule 4: Medium credit with excellent DTI - APPROVED
+% Rule 5: Medium credit with excellent DTI - APPROVED
 evaluate_loan(CreditScore, DTI, EmploymentYears, LoanAmount, AnnualIncome, Result, Explanation, Confidence) :-
     credit_category(CreditScore, medium),
     dti_category(DTI, excellent),
@@ -78,7 +89,18 @@ evaluate_loan(CreditScore, DTI, EmploymentYears, LoanAmount, AnnualIncome, Resul
     Explanation = 'Good credit history with excellent debt management. Stable employment supports the loan approval.',
     Confidence = 85.0.
 
-% Rule 5: Medium credit with good DTI - APPROVED
+% Rule 6: Medium credit with good DTI - CONDITIONAL if LTI is high
+evaluate_loan(CreditScore, DTI, EmploymentYears, LoanAmount, AnnualIncome, Result, Explanation, Confidence) :-
+    credit_category(CreditScore, medium),
+    dti_category(DTI, good),
+    loan_to_income_ratio(LoanAmount, AnnualIncome, LTI),
+    LTI >= 25,
+    !,
+    Result = conditional,
+    Explanation = 'Average credit score with reasonable debt levels. Additional documentation may be required.',
+    Confidence = 70.0.
+
+% Rule 7: Medium credit with good DTI and reasonable LTI - APPROVED
 evaluate_loan(CreditScore, DTI, EmploymentYears, LoanAmount, AnnualIncome, Result, Explanation, Confidence) :-
     credit_category(CreditScore, medium),
     dti_category(DTI, good),
@@ -89,7 +111,7 @@ evaluate_loan(CreditScore, DTI, EmploymentYears, LoanAmount, AnnualIncome, Resul
     Explanation = 'Acceptable credit score with manageable debt levels. Loan approved.',
     Confidence = 80.0.
 
-% Rule 6: Medium credit with moderate DTI - CONDITIONAL
+% Rule 8: Medium credit with moderate DTI - CONDITIONAL
 evaluate_loan(CreditScore, DTI, EmploymentYears, LoanAmount, AnnualIncome, Result, Explanation, Confidence) :-
     credit_category(CreditScore, medium),
     dti_category(DTI, moderate),
@@ -98,7 +120,7 @@ evaluate_loan(CreditScore, DTI, EmploymentYears, LoanAmount, AnnualIncome, Resul
     Explanation = 'Average credit score combined with elevated debt levels requires additional review. Consider reducing loan amount or improving debt situation.',
     Confidence = 65.0.
 
-% Rule 7: Medium credit with poor DTI - REJECTED
+% Rule 9: Medium credit with poor DTI - REJECTED
 evaluate_loan(CreditScore, DTI, EmploymentYears, LoanAmount, AnnualIncome, Result, Explanation, Confidence) :-
     credit_category(CreditScore, medium),
     dti_category(DTI, poor),
@@ -107,7 +129,7 @@ evaluate_loan(CreditScore, DTI, EmploymentYears, LoanAmount, AnnualIncome, Resul
     Explanation = 'Debt-to-income ratio is too high relative to credit history. Recommend improving debt management before reapplying.',
     Confidence = 80.0.
 
-% Rule 8: Low credit with excellent DTI - CONDITIONAL
+% Rule 10: Low credit with excellent DTI - CONDITIONAL
 evaluate_loan(CreditScore, DTI, EmploymentYears, LoanAmount, AnnualIncome, Result, Explanation, Confidence) :-
     credit_category(CreditScore, low),
     dti_category(DTI, excellent),
@@ -117,7 +139,7 @@ evaluate_loan(CreditScore, DTI, EmploymentYears, LoanAmount, AnnualIncome, Resul
     Explanation = 'Despite low credit score, excellent debt management and stable employment may compensate. Additional documentation required.',
     Confidence = 55.0.
 
-% Rule 9: Low credit with good DTI - REJECTED
+% Rule 11: Low credit with good DTI - REJECTED
 evaluate_loan(CreditScore, DTI, EmploymentYears, LoanAmount, AnnualIncome, Result, Explanation, Confidence) :-
     credit_category(CreditScore, low),
     dti_category(DTI, good),
@@ -126,15 +148,25 @@ evaluate_loan(CreditScore, DTI, EmploymentYears, LoanAmount, AnnualIncome, Resul
     Explanation = 'Credit history concerns outweigh positive debt levels. Recommend improving credit score before applying.',
     Confidence = 75.0.
 
-% Rule 10: Low credit with moderate or poor DTI - REJECTED
+% Rule 12: Low credit with moderate or poor DTI - REJECTED
 evaluate_loan(CreditScore, DTI, EmploymentYears, LoanAmount, AnnualIncome, Result, Explanation, Confidence) :-
     credit_category(CreditScore, low),
+    dti_category(DTI, moderate),
     !,
     Result = rejected,
     Explanation = 'Low credit score combined with high debt levels presents unacceptable risk. Application rejected.',
     Confidence = 90.0.
 
-% Rule 11: Very high loan to income - REJECTED
+% Rule 13: Low credit with poor DTI - REJECTED
+evaluate_loan(CreditScore, DTI, EmploymentYears, LoanAmount, AnnualIncome, Result, Explanation, Confidence) :-
+    credit_category(CreditScore, low),
+    dti_category(DTI, poor),
+    !,
+    Result = rejected,
+    Explanation = 'Low credit score combined with high debt levels presents unacceptable risk. Application rejected.',
+    Confidence = 90.0.
+
+% Rule 14: Very high loan to income - REJECTED
 evaluate_loan(CreditScore, DTI, EmploymentYears, LoanAmount, AnnualIncome, Result, Explanation, Confidence) :-
     loan_to_income_ratio(LoanAmount, AnnualIncome, LTI),
     LTI > 40,
@@ -143,18 +175,26 @@ evaluate_loan(CreditScore, DTI, EmploymentYears, LoanAmount, AnnualIncome, Resul
     Explanation = 'Loan amount exceeds reasonable limits relative to income. Consider applying for a smaller loan amount.',
     Confidence = 85.0.
 
-% Rule 12: No employment history - REJECTED
+% Rule 15: No employment history - REJECTED
 evaluate_loan(CreditScore, DTI, 0, LoanAmount, AnnualIncome, Result, Explanation, Confidence) :-
     !,
     Result = rejected,
     Explanation = 'Employment history is required for loan approval. Please provide proof of employment.',
     Confidence = 95.0.
 
-% Rule 13: New employment - CONDITIONAL
+% Rule 16: New employment - CONDITIONAL
 evaluate_loan(CreditScore, DTI, EmploymentYears, LoanAmount, AnnualIncome, Result, Explanation, Confidence) :-
     EmploymentYears < 1,
     credit_category(CreditScore, high),
     dti_category(DTI, good),
+    !,
+    Result = conditional,
+    Explanation = 'Limited employment history requires additional verification. Co-signer may be required.',
+    Confidence = 60.0.
+
+% Rule 17: New employment with other factors - CONDITIONAL
+evaluate_loan(CreditScore, DTI, EmploymentYears, LoanAmount, AnnualIncome, Result, Explanation, Confidence) :-
+    EmploymentYears < 1,
     !,
     Result = conditional,
     Explanation = 'Limited employment history requires additional verification. Co-signer may be required.',

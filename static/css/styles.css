@@ -1,0 +1,116 @@
+/* Loan Evaluation Expert System - Main Stylesheet */
+/* Using standard CSS to complement Tailwind CSS */
+
+/* Custom utility classes that extend Tailwind */
+.navbar-link {
+    @apply hover:bg-blue-800 px-3 py-2 rounded text-white transition-colors duration-200;
+}
+
+.navbar-logout {
+    @apply hover:bg-red-600 px-3 py-2 rounded bg-red-700 text-white transition-colors duration-200;
+}
+
+.card-hover {
+    @apply transition-shadow duration-200 hover:shadow-lg;
+}
+
+.fade-in {
+    animation: fadeIn 0.3s ease-in;
+}
+
+.slide-in {
+    animation: slideIn 0.3s ease-out;
+}
+
+/* Custom animations */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideIn {
+    from { transform: translateY(-10px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+/* Custom components */
+.evaluation-result {
+    @apply p-4 rounded-lg mb-4 border;
+}
+
+.evaluation-approved {
+    @apply bg-green-50 border-green-200;
+}
+
+.evaluation-conditional {
+    @apply bg-yellow-50 border-yellow-200;
+}
+
+.evaluation-rejected {
+    @apply bg-red-50 border-red-200;
+}
+
+.confidence-meter {
+    @apply w-full bg-gray-200 rounded-full h-4;
+}
+
+.confidence-fill {
+    @apply h-4 rounded-full transition-all duration-300;
+}
+
+.confidence-high {
+    @apply bg-green-600;
+}
+
+.confidence-medium {
+    @apply bg-yellow-600;
+}
+
+.confidence-low {
+    @apply bg-red-600;
+}
+
+/* Chart container styling */
+.chart-container {
+    @apply bg-white p-4 rounded-lg shadow-md;
+}
+
+/* Custom form enhancements */
+.form-input:focus {
+    @apply ring-2 ring-blue-500 ring-opacity-50;
+}
+
+.form-select:focus {
+    @apply ring-2 ring-blue-500 ring-opacity-50;
+}
+
+.form-textarea:focus {
+    @apply ring-2 ring-blue-500 ring-opacity-50;
+}
+
+/* Loading spinner customization */
+.spinner {
+    @apply animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600;
+}
+
+/* Custom button states */
+.btn:disabled {
+    @apply opacity-50 cursor-not-allowed;
+}
+
+/* Table enhancements */
+.table-row-hover {
+    @apply hover:bg-gray-50 transition-colors duration-150;
+}
+
+/* Badge enhancements */
+.badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .navbar-links {
+        @apply flex-col space-x-0 space-y-2;
+    }
+}
