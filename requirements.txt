@@ -1,20 +1,6 @@
-# Web Framework
 Flask==3.0.0
-Flask-Session==0.5.0
 Flask-SQLAlchemy==3.1.1
-
-# Database
 SQLAlchemy==2.0.23
-sqlite3 (built-in)
-
-# Prolog Integration
 pyswip==0.2.10
-
-# Password Hashing
 Werkzeug==3.0.1
-
-# Utilities
 python-dotenv==1.0.0
-
-# For session management
-cryptography==41.0.7
