@@ -8,7 +8,10 @@ from datetime import datetime
 
 from config import Config
 from models import db, User, LoanApplication, EvaluationHistory
-from prolog_engine import initialize_prolog, evaluate_loan, get_prolog_engine
+from prolog_engine import (
+    initialize_prolog, evaluate_loan, validate_application, get_prolog_engine,
+    get_system_config, validate_system_config, get_business_limits
+)
 
 # Create Flask application
 app = Flask(__name__)
@@ -19,18 +22,46 @@ db.init_app(app)
 
 # Initialize Prolog engine
 def init_prolog():
-    """Initialize Prolog engine with rules"""
+    """Initialize Prolog engine with rules and configuration"""
     rules_path = os.path.join(os.path.dirname(__file__), 'rules.pl')
     success = initialize_prolog(rules_path)
     if success:
         print("Prolog engine initialized successfully")
+        
+        # Load business limits from Prolog
+        try:
+            limits = get_business_limits()
+            print(f"Business limits loaded from Prolog: {limits}")
+        except Exception as e:
+            print(f"Error loading business limits from Prolog: {e}")
     else:
         print("Using fallback Python evaluation (Prolog not available)")
     return success
 
+# Initialize system configuration from Prolog
+def init_system_config():
+    """Initialize system configuration from Prolog"""
+    try:
+        # Get configuration values from Prolog
+        debug_mode = get_system_config('app_config', 'debug')
+        if debug_mode is not None:
+            app.config['DEBUG'] = bool(debug_mode)
+            print(f"Debug mode set from Prolog: {debug_mode}")
+        
+        port = get_system_config('app_config', 'default_port')
+        if port is not None:
+            app.config['PORT'] = int(port)
+            print(f"Port set from Prolog: {port}")
+        
+        return True
+    except Exception as e:
+        print(f"Error loading system config from Prolog: {e}")
+        return False
+
 # Initialize Prolog on startup
 with app.app_context():
     init_prolog()
+    init_system_config()
 
 
 def build_result_stats(applications):
@@ -210,26 +241,11 @@ def apply_loan():
             employment_type = request.form.get('employment_type', 'full_time')
             loan_purpose = request.form.get('loan_purpose', '').strip()
             
-            # Validation
-            errors = []
+            # Validation using Prolog
+            validation = validate_application(loan_amount, annual_income, credit_score, employment_years, loan_purpose)
             
-            if loan_amount <= 0:
-                errors.append('Loan amount must be greater than 0.')
-            
-            if annual_income <= 0:
-                errors.append('Annual income must be greater than 0.')
-            
-            if credit_score < 300 or credit_score > 850:
-                errors.append('Credit score must be between 300 and 850.')
-            
-            if employment_years < 0:
-                errors.append('Employment years cannot be negative.')
-            
-            if not loan_purpose:
-                errors.append('Please specify the loan purpose.')
-            
-            if errors:
-                for error in errors:
+            if not validation['valid']:
+                for error in validation['errors']:
                     flash(error, 'error')
                 return render_template('apply.html')
             

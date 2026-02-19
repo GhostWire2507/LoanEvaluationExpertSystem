@@ -25,7 +25,7 @@ class PrologEngine:
         
     def initialize(self, rules_path: str) -> bool:
         """
-        Initialize the Prolog engine with the rules file
+        Initialize the Prolog engine with the rules file and system configuration
         
         Args:
             rules_path: Path to the Prolog rules file
@@ -47,7 +47,14 @@ class PrologEngine:
             # Initialize Prolog with error handling
             try:
                 self.prolog = Prolog()
-                # Load the rules file
+                
+                # Load system configuration first
+                config_path = os.path.join(os.path.dirname(rules_path), 'system_config.pl')
+                if os.path.exists(config_path):
+                    self.prolog.consult(config_path)
+                    print(f"System configuration loaded from: {config_path}")
+                
+                # Load the main rules file
                 self.prolog.consult(rules_path)
                 
                 self._initialized = True
@@ -147,115 +154,106 @@ class PrologEngine:
                 employment_years, loan_amount
             )
     
-    def _evaluate_fallback(
+    def validate_application(
         self, 
-        credit_score: int, 
-        debt_amount: float, 
+        loan_amount: float, 
         annual_income: float, 
+        credit_score: int, 
         employment_years: int, 
-        loan_amount: float
+        loan_purpose: str
     ) -> Dict[str, Any]:
         """
-        Fallback Python-based evaluation when Prolog is not available
+        Validate loan application using Prolog rules
+        
+        Args:
+            loan_amount: Requested loan amount
+            annual_income: Annual income
+            credit_score: Credit score
+            employment_years: Years of employment
+            loan_purpose: Purpose of the loan
+            
+        Returns:
+            Dictionary with validation result and any errors
         """
-        # Calculate DTI
-        dti = (debt_amount / annual_income) * 100 if annual_income > 0 else 100
+        if not self._initialized:
+            # Fallback validation
+            errors = []
+            if loan_amount <= 0:
+                errors.append('Loan amount must be greater than 0.')
+            if annual_income <= 0:
+                errors.append('Annual income must be greater than 0.')
+            if credit_score < 300 or credit_score > 850:
+                errors.append('Credit score must be between 300 and 850.')
+            if employment_years < 0:
+                errors.append('Employment years cannot be negative.')
+            if not loan_purpose or loan_purpose.strip() == '':
+                errors.append('Please specify the loan purpose.')
+            
+            return {
+                'valid': len(errors) == 0,
+                'errors': errors,
+                'validation_method': 'fallback'
+            }
         
-        # Determine credit category
-        if credit_score >= 750:
-            credit_cat = 'high'
-        elif credit_score >= 650:
-            credit_cat = 'medium'
-        else:
-            credit_cat = 'low'
-        
-        # Determine DTI category
-        if dti < 15:
-            dti_cat = 'excellent'
-        elif dti < 30:
-            dti_cat = 'good'
-        elif dti < 43:
-            dti_cat = 'moderate'
-        else:
-            dti_cat = 'poor'
-        
-        # Loan to income ratio
-        lti = (loan_amount / annual_income) * 100 if annual_income > 0 else 100
-        
-        # Evaluation logic (same as Prolog rules)
-        if credit_cat == 'high' and dti_cat in ['excellent', 'good'] and employment_years >= 3:
-            if dti_cat == 'excellent':
-                result = 'approved'
-                explanation = 'Excellent credit score combined with low debt-to-income ratio and stable employment indicates very low risk. Loan is approved.'
-                confidence = 95.0
-            else:
-                if lti < 30:
-                    result = 'approved'
-                    explanation = 'Strong credit history and manageable debt levels. The loan amount is reasonable relative to income. Approved.'
-                    confidence = 90.0
-                else:
-                    result = 'conditional'
-                    explanation = 'Good credit score but loan amount is high relative to income. Approved with conditions.'
-                    confidence = 75.0
-        elif credit_cat == 'high' and dti_cat == 'moderate':
-            result = 'conditional'
-            explanation = 'Good credit score but debt-to-income ratio is slightly elevated. Loan approved with conditions such as additional documentation or co-signer.'
-            confidence = 75.0
-        elif credit_cat == 'medium' and dti_cat in ['excellent', 'good']:
-            if dti_cat == 'excellent' and employment_years >= 3:
-                result = 'approved'
-                explanation = 'Good credit history with excellent debt management. Stable employment supports the loan approval.'
-                confidence = 85.0
-            elif dti_cat == 'good' and lti < 25:
-                result = 'approved'
-                explanation = 'Acceptable credit score with manageable debt levels. Loan approved.'
-                confidence = 80.0
-            else:
-                result = 'conditional'
-                explanation = 'Average credit score with reasonable debt levels. Additional documentation may be required.'
-                confidence = 70.0
-        elif credit_cat == 'medium' and dti_cat == 'moderate':
-            result = 'conditional'
-            explanation = 'Average credit score combined with elevated debt levels requires additional review. Consider reducing loan amount or improving debt situation.'
-            confidence = 65.0
-        elif credit_cat == 'medium' and dti_cat == 'poor':
-            result = 'rejected'
-            explanation = 'Debt-to-income ratio is too high relative to credit history. Recommend improving debt management before reapplying.'
-            confidence = 80.0
-        elif credit_cat == 'low':
-            if dti_cat == 'excellent' and employment_years >= 3:
-                result = 'conditional'
-                explanation = 'Despite low credit score, excellent debt management and stable employment may compensate. Additional documentation required.'
-                confidence = 55.0
-            else:
-                result = 'rejected'
-                if dti_cat == 'good':
-                    explanation = 'Credit history concerns outweigh positive debt levels. Recommend improving credit score before applying.'
-                    confidence = 75.0
-                else:
-                    explanation = 'Low credit score combined with high debt levels presents unacceptable risk. Application rejected.'
-                    confidence = 90.0
-        elif lti > 40:
-            result = 'rejected'
-            explanation = 'Loan amount exceeds reasonable limits relative to income. Consider applying for a smaller loan amount.'
-            confidence = 85.0
-        elif employment_years < 1:
-            result = 'conditional'
-            explanation = 'Limited employment history requires additional verification. Co-signer may be required.'
-            confidence = 60.0
-        else:
-            result = 'rejected'
-            explanation = 'Application does not meet minimum requirements for loan approval.'
-            confidence = 50.0
+        try:
+            # Use Prolog for validation
+            query = f"validate_application({loan_amount}, {annual_income}, {credit_score}, {employment_years}, '{loan_purpose}', Result)."
+            solutions = list(self.prolog.query(query))
+            
+            if solutions:
+                result = solutions[0]['Result']
+                if result == 'valid':
+                    return {
+                        'valid': True,
+                        'errors': [],
+                        'validation_method': 'prolog'
+                    }
+                elif isinstance(result, str) and result.startswith('errors('):
+                    # Extract errors from Prolog result
+                    error_list = result[6:-1].split(',') if len(result) > 7 else []
+                    cleaned_errors = [err.strip().strip("'") for err in error_list if err.strip()]
+                    return {
+                        'valid': False,
+                        'errors': cleaned_errors,
+                        'validation_method': 'prolog'
+                    }
+            
+            # Fallback if Prolog query fails
+            return {
+                'valid': False,
+                'errors': ['Validation system error'],
+                'validation_method': 'fallback'
+            }
+            
+        except Exception as e:
+            print(f"Error in Prolog validation: {e}")
+            return self._validate_fallback(loan_amount, annual_income, credit_score, employment_years, loan_purpose)
+    
+    def _validate_fallback(
+        self, 
+        loan_amount: float, 
+        annual_income: float, 
+        credit_score: int, 
+        employment_years: int, 
+        loan_purpose: str
+    ) -> Dict[str, Any]:
+        """Fallback validation method"""
+        errors = []
+        if loan_amount <= 0:
+            errors.append('Loan amount must be greater than 0.')
+        if annual_income <= 0:
+            errors.append('Annual income must be greater than 0.')
+        if credit_score < 300 or credit_score > 850:
+            errors.append('Credit score must be between 300 and 850.')
+        if employment_years < 0:
+            errors.append('Employment years cannot be negative.')
+        if not loan_purpose or loan_purpose.strip() == '':
+            errors.append('Please specify the loan purpose.')
         
         return {
-            'result': result,
-            'explanation': explanation,
-            'confidence': confidence,
-            'dti_ratio': round(dti, 2),
-            'credit_category': credit_cat,
-            'dti_category': dti_cat,
-            'evaluation_method': 'fallback'
+            'valid': len(errors) == 0,
+            'errors': errors,
+            'validation_method': 'fallback'
         }
     
     def _get_credit_category(self, score: int) -> str:
@@ -305,9 +303,70 @@ class PrologEngine:
             'employment_stability': 'stable' if employment_years >= 3 else ('moderate' if employment_years >= 1 else 'unstable')
         }
     
-    def is_initialized(self) -> bool:
-        """Check if Prolog engine is initialized"""
-        return self._initialized
+    def get_system_config(self, category: str, key: str) -> Any:
+        """Get system configuration value from Prolog"""
+        if not self._initialized:
+            return None
+        
+        try:
+            query = f"get_config({category}, {key}, Value)."
+            solutions = list(self.prolog.query(query))
+            
+            if solutions:
+                return solutions[0].get('Value')
+            return None
+        except Exception as e:
+            print(f"Error getting config from Prolog: {e}")
+            return None
+    
+    def validate_system_config(self, category: str, key: str, value: Any) -> bool:
+        """Validate configuration value using Prolog rules"""
+        if not self._initialized:
+            return True  # Fallback to valid
+        
+        try:
+            query = f"validate_config({category}, {key}, {value})."
+            solutions = list(self.prolog.query(query))
+            return len(solutions) > 0
+        except Exception as e:
+            print(f"Error validating config with Prolog: {e}")
+            return True
+    
+    def get_business_limits(self) -> Dict[str, Any]:
+        """Get business limits from Prolog configuration"""
+        if not self._initialized:
+            return self._get_fallback_limits()
+        
+        try:
+            limits = {}
+            config_keys = ['min_loan_amount', 'max_loan_amount', 'min_credit_score', 'max_credit_score']
+            
+            for key in config_keys:
+                query = f"get_config(business_config, {key}, Value)."
+                solutions = list(self.prolog.query(query))
+                if solutions:
+                    limits[key] = solutions[0].get('Value')
+                else:
+                    limits[key] = self._get_fallback_limit(key)
+            
+            return limits
+        except Exception as e:
+            print(f"Error getting business limits from Prolog: {e}")
+            return self._get_fallback_limits()
+    
+    def _get_fallback_limits(self) -> Dict[str, Any]:
+        """Fallback business limits"""
+        return {
+            'min_loan_amount': 100,
+            'max_loan_amount': 1000000,
+            'min_credit_score': 300,
+            'max_credit_score': 850
+        }
+    
+    def _get_fallback_limit(self, key: str) -> Any:
+        """Get fallback limit value"""
+        fallback_limits = self._get_fallback_limits()
+        return fallback_limits.get(key)
 
 
 # Singleton instance
@@ -318,22 +377,12 @@ def get_prolog_engine() -> PrologEngine:
     global _prolog_engine
     if _prolog_engine is None:
         _prolog_engine = PrologEngine()
-    return _prolog_engine
-
-
 def initialize_prolog(rules_path: str) -> bool:
-    """
-    Initialize the Prolog engine with rules from the given path
-    
-    Args:
-        rules_path: Path to the Prolog rules file
-        
-    Returns:
-        True if initialization successful
-    """
-    engine = get_prolog_engine()
-    return engine.initialize(rules_path)
-
+    """Initialize the global Prolog engine"""
+    global _prolog_engine
+    if _prolog_engine is None:
+        _prolog_engine = PrologEngine()
+    return _prolog_engine.initialize(rules_path)
 
 def evaluate_loan(
     credit_score: int, 
@@ -342,18 +391,51 @@ def evaluate_loan(
     employment_years: int, 
     loan_amount: float
 ) -> Dict[str, Any]:
-    """
-    Evaluate a loan application
-    
-    Args:
-        credit_score: Applicant's credit score
-        debt_amount: Total debt amount
-        annual_income: Annual gross income
-        employment_years: Years of employment
-        loan_amount: Requested loan amount
-        
-    Returns:
-        Dictionary with evaluation results
-    """
-    engine = get_prolog_engine()
-    return engine.evaluate_loan(credit_score, debt_amount, annual_income, employment_years, loan_amount)
+    """Evaluate loan application using Prolog"""
+    global _prolog_engine
+    if _prolog_engine is None:
+        _prolog_engine = PrologEngine()
+        _prolog_engine.initialize('')
+    return _prolog_engine.evaluate_loan(
+        credit_score, debt_amount, annual_income, employment_years, loan_amount
+    )
+
+def validate_application(
+    loan_amount: float, 
+    annual_income: float, 
+    credit_score: int, 
+    employment_years: int, 
+    loan_purpose: str
+) -> Dict[str, Any]:
+    """Validate loan application using Prolog"""
+    global _prolog_engine
+    if _prolog_engine is None:
+        _prolog_engine = PrologEngine()
+        _prolog_engine.initialize('')
+    return _prolog_engine.validate_application(
+        loan_amount, annual_income, credit_score, employment_years, loan_purpose
+    )
+
+def get_system_config(category: str, key: str) -> Any:
+    """Get system configuration value from Prolog"""
+    global _prolog_engine
+    if _prolog_engine is None:
+        _prolog_engine = PrologEngine()
+        _prolog_engine.initialize('')
+    return _prolog_engine.get_system_config(category, key)
+
+def validate_system_config(category: str, key: str, value: Any) -> bool:
+    """Validate configuration value using Prolog rules"""
+    global _prolog_engine
+    if _prolog_engine is None:
+        _prolog_engine = PrologEngine()
+        _prolog_engine.initialize('')
+    return _prolog_engine.validate_system_config(category, key, value)
+
+def get_business_limits() -> Dict[str, Any]:
+    """Get business limits from Prolog configuration"""
+    global _prolog_engine
+    if _prolog_engine is None:
+        _prolog_engine = PrologEngine()
+        _prolog_engine.initialize('')
+    return _prolog_engine.get_business_limits()
