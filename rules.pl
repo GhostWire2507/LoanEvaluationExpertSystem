@@ -1,5 +1,5 @@
 %=====================================================================
-% Loan Evaluation Expert System - Prolog Rules
+% MFS Intelligent Loan Assessment & Management System - Prolog Rules
 % This file contains the expert system rules for evaluating loan applications
 % based on credit score, debt-to-income ratio, employment, and other factors
 %=====================================================================

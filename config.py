@@ -1,4 +1,4 @@
-"""Application configuration for the Loan Evaluation Expert System."""
+"""Application configuration for MFS Intelligent Loan Assessment & Management System."""
 
 import os
 from datetime import timedelta

@@ -1,10 +1,10 @@
 # MFS Intelligent Loan Assessment & Management System
 
-A simplified, local-first loan evaluation platform that combines:
-- **Flask** for the web app
-- **SWI-Prolog rules** for expert reasoning (with Python fallback)
-- **SQLite** for persistent local storage
-- **Tailwind-based templates** for a clean fintech UI
+A simplified, local-first loan evaluation platform that follows a Prolog-first design:
+- **Flask** for HTTP routing and UI rendering (thin Python layer)
+- **SWI-Prolog** as the primary expert-logic engine (rules live in `rules.pl`)
+- **JSON file storage** for lightweight persistence (see `storage.py`)
+- **Tailwind-based templates** for a minimal UI
 
 ## 1) What was simplified
 
@@ -14,10 +14,10 @@ This project has been kept to a small, understandable structure:
 .
 ├── app.py                # Routes + auth + dashboards + API
 ├── config.py             # Centralized runtime settings
-├── models.py             # SQLite-backed SQLAlchemy models
-├── prolog_engine.py      # Prolog bridge + fallback evaluator
-├── rules.pl              # Expert system rules
-├── sqlite_schema.sql     # Raw SQLite schema (for local/manual setup)
+├── models.py             # Optional SQLAlchemy models (kept for compatibility)
+├── storage.py            # JSON-based lightweight storage (primary persistence)
+├── prolog_engine.py      # Prolog bridge (Prolog-first; degraded fallback optional)
+├── rules.pl              # Expert system rules (single source of truth)
 ├── requirements.txt
 └── templates/
 ```
@@ -31,16 +31,15 @@ This project has been kept to a small, understandable structure:
    pip install -r requirements.txt
    ```
 
-2. Initialize DB through Flask models:
+2. Initialize and run the app (uses JSON storage by default):
    ```bash
    python app.py
    ```
-   On first run, tables are created and a default admin is seeded.
+   On first run the `data/` folder is created and seeded as needed.
 
-3. Optional: initialize DB manually via SQLite schema:
-   ```bash
-   sqlite3 loan_system.db < sqlite_schema.sql
-   ```
+3. Optional compatibility: if you still want to use SQLite/SQLAlchemy, `models.py` and
+   `init_db()` are retained for backward compatibility but JSON storage is the recommended
+   lightweight default.
 
 ## 3) Run the app
 
@@ -56,9 +55,9 @@ python app.py
 ## 4) MCP implementation checklist
 
 ### Phase 1: Environment Setup
-- [x] SQLite database configuration in `config.py`
-- [x] SQLAlchemy and raw SQLite schema (`sqlite_schema.sql`)
-- [x] First-run DB bootstrap in `init_db()`
+- [x] JSON-based storage implemented in `storage.py`
+- [x] Prolog-first evaluation model in `rules.pl` and `system_config.pl`
+- [x] `prolog_engine.py` is a thin Prolog bridge; a clear degraded fallback exists behind `PROLOG_DEGRADED`.
 
 ### Phase 2: Backend Core
 - [x] HTTP server and route handling (`app.py`)
@@ -120,7 +119,7 @@ Each application stores:
 python -m py_compile app.py models.py prolog_engine.py config.py
 
 # Start server
-python app.py
+PROLOG_DEGRADED=true python app.py  # run in degraded mode if Prolog isn't installed
 ```
 
 ## 8) Future improvements
